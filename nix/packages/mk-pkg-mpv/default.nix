@@ -245,6 +245,7 @@ pkgs.stdenvNoCC.mkDerivation {
 
     if [ "${os}" == "${oses.macos}" ]; then
       OPTIONS+=("''${MACOS_OPTIONS[@]}")
+      OPTIONS+=("-Dswift-flags=-Xcc -fmodules-cache-path=$CLANG_MODULE_CACHE_PATH")
       if [ "${variant}" == "${variants.video}" ]; then
         OPTIONS+=("''${MACOS_VIDEO_OPTIONS[@]}")
       fi
