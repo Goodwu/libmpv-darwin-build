@@ -85,6 +85,8 @@ pkgs.stdenvNoCC.mkDerivation {
     ];
   configurePhase = ''
     export SWIFT_LIB_DYNAMIC=${pkgs.darwin.xcode}/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx
+    export CLANG_MODULE_CACHE_PATH=$TMPDIR/clang-module-cache
+    mkdir -p "$CLANG_MODULE_CACHE_PATH"
     DISABLE_ALL_OPTIONS=(
       `# booleans`
       -Dgpl=false `# GPL (version 2 or later) build`
