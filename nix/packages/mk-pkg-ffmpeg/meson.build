@@ -69,8 +69,10 @@ video_common_options = [
     '--enable-neon', # improve hevc (h265) support on arm
     '--enable-libxml2', # dash support
     '--enable-videotoolbox',
-    '--enable-libdav1d', # av1 support
 ]
+if get_option('enable-dav1d')
+    video_common_options += ['--enable-libdav1d'] # av1 support
+endif
 
 # https://github.com/media-kit/libmpv-android-audio-build/blob/260666c0fef8c154971b5faf3f78da27c2bf2c40/buildscripts/flavors/default.sh
 audio_default_options = [
@@ -186,7 +188,7 @@ video_default_options = [
     '--enable-decoder=vp9', # vp9*
     '--enable-decoder=hevc', # hevc*
     '--enable-decoder=av1', # av1*
-    '--enable-decoder=libdav1d',
+    # libdav1d is enabled above when the dependency is available.
     '--enable-decoder=theora',
     '--enable-decoder=msmpeg4v1', # msmpeg*
     '--enable-decoder=msmpeg4v2', # msmpeg*

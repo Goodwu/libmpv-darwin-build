@@ -12,6 +12,7 @@ let
   inherit (packageLock) version;
 
   flavors = import ../../utils/constants/flavors.nix;
+  oses = import ../../utils/constants/oses.nix;
   variants = import ../../utils/constants/variants.nix;
   callPackage = pkgs.lib.callPackageWith {
     inherit
@@ -43,9 +44,7 @@ let
 
     cd $src
     patch -p1 <${../../../patches/ffmpeg-fix-vp9-hwaccel.patch}
-    patch -p1 <${../../../patches/ffmpeg-fix-hls-mp4-seek.patch}
     patch -p1 <${../../../patches/ffmpeg-fix-ios-hdr-texture.patch}
-    patch -p1 <${../../../patches/ffmpeg-fix-dash-base-url-escape.patch}
     cd -
 
     cp ${./meson.build} $src/meson.build
@@ -72,8 +71,11 @@ pkgs.stdenvNoCC.mkDerivation {
     ++ pkgs.lib.optionals (flavor == flavors.encodersgpl) [
       libvorbis
     ]
-    ++ pkgs.lib.optionals (variant == variants.video) [
+    ++ pkgs.lib.optionals (variant == variants.video && os != oses.macos) [
       dav1d
+      libxml2
+    ]
+    ++ pkgs.lib.optionals (variant == variants.video && os == oses.macos) [
       libxml2
     ]
     ++ pkgs.lib.optionals (variant == variants.video && flavor == flavors.encodersgpl) [
@@ -86,7 +88,8 @@ pkgs.stdenvNoCC.mkDerivation {
       --cross-file ${crossFile} \
       --prefix=$out \
       -Dvariant=${variant} \
-      -Dflavor=${flavor} |
+      -Dflavor=${flavor} \
+      -Denable-dav1d=${if os == oses.macos then "false" else "true"} |
       tee configure.log
   '';
   buildPhase = ''
