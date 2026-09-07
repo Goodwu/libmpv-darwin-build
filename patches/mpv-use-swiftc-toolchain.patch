@@ -1,6 +1,6 @@
 --- a/meson.build
 +++ b/meson.build
-@@ -1553,17 +1553,16 @@
+@@ -1553,9 +1553,8 @@
  swift = get_option('swift-build').require(
      darwin and features['cocoa'],
      error_message: 'cocoa was not found',
