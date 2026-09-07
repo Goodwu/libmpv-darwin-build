@@ -178,6 +178,14 @@ else
       for lib in ''${deps[0]}/*.dylib; do
         lib_name=$(basename $lib)
 
+        # libplacebo comes from nixpkgs and is currently the host-arch
+        # library in both cross builds. Keep it from being lipo'd twice;
+        # this B3 experiment targets the native arm64 validation path.
+        if [ "$lib_name" = "libplacebo.dylib" ]; then
+          cp "$lib" "./build/$lib_name"
+          continue
+        fi
+
         # Initialize lipo command
         lipo_cmd="lipo -create"
 
