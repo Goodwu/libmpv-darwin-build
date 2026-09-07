@@ -84,6 +84,7 @@ pkgs.stdenvNoCC.mkDerivation {
       libass
     ];
   configurePhase = ''
+    export MACOS_SDK=${pkgs.darwin.xcode}/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk
     export SWIFT_LIB_DYNAMIC=${pkgs.darwin.xcode}/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx
     export CLANG_MODULE_CACHE_PATH=$TMPDIR/clang-module-cache
     mkdir -p "$CLANG_MODULE_CACHE_PATH"
