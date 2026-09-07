@@ -88,7 +88,8 @@ pkgs.stdenvNoCC.mkDerivation {
       --cross-file ${crossFile} \
       --prefix=$out \
       -Dvariant=${variant} \
-      -Dflavor=${flavor} |
+      -Dflavor=${flavor} \
+      -Denable-dav1d=${if os == oses.macos then "false" else "true"} |
       tee configure.log
   '';
   buildPhase = ''

@@ -63,7 +63,6 @@ if arch != archs.universal then
         libogg
       ]
       ++ pkgs.lib.optionals (variant == variants.video) [
-        dav1d
         libxml2
         uchardet
         libass
