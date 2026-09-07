@@ -12,6 +12,7 @@ let
   inherit (packageLock) version;
 
   flavors = import ../../utils/constants/flavors.nix;
+  oses = import ../../utils/constants/oses.nix;
   variants = import ../../utils/constants/variants.nix;
   callPackage = pkgs.lib.callPackageWith {
     inherit
@@ -70,8 +71,11 @@ pkgs.stdenvNoCC.mkDerivation {
     ++ pkgs.lib.optionals (flavor == flavors.encodersgpl) [
       libvorbis
     ]
-    ++ pkgs.lib.optionals (variant == variants.video) [
+    ++ pkgs.lib.optionals (variant == variants.video && os != oses.macos) [
       dav1d
+      libxml2
+    ]
+    ++ pkgs.lib.optionals (variant == variants.video && os == oses.macos) [
       libxml2
     ]
     ++ pkgs.lib.optionals (variant == variants.video && flavor == flavors.encodersgpl) [
