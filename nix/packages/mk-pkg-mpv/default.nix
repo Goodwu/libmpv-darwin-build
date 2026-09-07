@@ -84,6 +84,7 @@ pkgs.stdenvNoCC.mkDerivation {
       libass
     ];
   configurePhase = ''
+    export SWIFT_LIB_DYNAMIC=${pkgs.darwin.xcode}/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/macosx
     DISABLE_ALL_OPTIONS=(
       `# booleans`
       -Dgpl=false `# GPL (version 2 or later) build`
