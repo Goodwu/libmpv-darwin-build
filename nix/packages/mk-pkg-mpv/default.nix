@@ -176,7 +176,7 @@ pkgs.stdenvNoCC.mkDerivation {
       -Dmacos-cocoa-cb=disabled `# macOS libmpv backend`
       -Dmacos-media-player=disabled `# macOS Media Player support`
       -Dmacos-touchbar=disabled `# macOS Touch Bar support`
-      -Dswift-build=disabled `# macOS Swift build tools`
+      -Dswift-build=enabled `# macOS Swift build tools`
       -Dswift-flags= `# Optional Swift compiler flags`
 
       `# manpages`
