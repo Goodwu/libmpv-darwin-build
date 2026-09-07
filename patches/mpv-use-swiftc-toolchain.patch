@@ -1,0 +1,18 @@
+--- a/meson.build
++++ b/meson.build
+@@ -1553,17 +1553,16 @@
+ swift = get_option('swift-build').require(
+     darwin and features['cocoa'],
+     error_message: 'cocoa was not found',
+ )
+-xcrun = find_program('xcrun', required: swift)
+ swift_ver = '0.0'
+-if xcrun.found()
+-    swift_prog = find_program(run_command(xcrun, '-find', 'swiftc', check: true).stdout().strip())
++if swift.allowed()
++    swift_prog = find_program('swiftc', required: true)
+     swift_ver_string = run_command(swift_prog, '-version', check: true).stdout()
+@@ -1580,7 +1579,7 @@
+ if features['cocoa'] and not features['swift'] and get_option('cplayer')
+     error('cplayer enabled but no suitable swift version could be found or was disabled!')
+ endif

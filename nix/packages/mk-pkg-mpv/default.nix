@@ -23,6 +23,7 @@ let
   nativeFile = callPackage ../../utils/native-file/default.nix { };
   crossFile = callPackage ../../utils/cross-file/default.nix { };
   xctoolchainLipo = callPackage ../../utils/xctoolchain/lipo.nix { };
+  xctoolchainSwiftc = callPackage ../../utils/xctoolchain/swiftc.nix { };
   ffmpeg = callPackage ../mk-pkg-ffmpeg/default.nix { };
   libplacebo = pkgs.libplacebo;
   uchardet = callPackage ../mk-pkg-uchardet/default.nix { };
@@ -34,6 +35,7 @@ let
     pkgs.pkg-config
     pkgs.python3
     xctoolchainLipo
+    xctoolchainSwiftc
   ];
 
   pname = import ../../utils/name/package.nix name;
@@ -49,6 +51,7 @@ let
     cd $src
     patch -p1 <${../../../patches/mpv-fix-missing-objc.patch}
     patch -p1 <${../../../patches/mpv-audiounit-shared-session.patch}
+    patch -p1 <${../../../patches/mpv-use-swiftc-toolchain.patch}
     if [ "${variant}" == "${variants.audio}" ]; then
       patch -p1 <${../../../patches/mpv-remove-libass.patch}
     fi
