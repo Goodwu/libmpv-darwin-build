@@ -2,12 +2,12 @@
   dav1d = {
     version = "1.2.1";
     url = "https://code.videolan.org/videolan/dav1d/-/archive/1.2.1/dav1d-1.2.1.tar.bz2";
-    sha256 = "a4003623cdc0109dec3aac8435520aa3fb12c4d69454fa227f2658cdb6dab5fa";
+    sha256 = "b7cf175eff5a0910d6746133cbf835aed61de23bff6b2534c1622abb6080887e";
   };
   ffmpeg = {
-    version = "6.0";
-    url = "https://ffmpeg.org/releases/ffmpeg-6.0.tar.xz";
-    sha256 = "57be87c22d9b49c112b6d24bc67d42508660e6b718b3db89c44e47e289137082";
+    version = "9.0.1";
+    url = "https://ffmpeg.org/releases/ffmpeg-9.0.1.tar.xz";
+    sha256 = "cf38e0e28c7e5605942c4a77755349b0145804a397af37eb1fb4c77cb237f635";
   };
   fftools-ffi = {
     version = "9b0d4da0";
@@ -75,9 +75,9 @@
     sha256 = "a420fcf7103e54e775c383e3751729b8fb2dcd087f6165befd13f28315f754f5";
   };
   mpv = {
-    version = "0.36.0";
-    url = "https://github.com/mpv-player/mpv/archive/refs/tags/v0.36.0.tar.gz";
-    sha256 = "29abc44f8ebee013bb2f9fe14d80b30db19b534c679056e4851ceadf5a5e8bf6";
+    version = "0.41.0";
+    url = "https://github.com/mpv-player/mpv/archive/refs/tags/v0.41.0.tar.gz";
+    sha256 = "ee21092a5ee427353392360929dc64645c54479aefdb5babc5cfbb5fad626209";
   };
   uchardet = {
     version = "0.0.8";

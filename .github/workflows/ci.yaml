@@ -68,7 +68,10 @@ jobs:
           XCODE_PATH: ${{ steps.xcode_path.outputs.xcode_path }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          nix develop -c make XCODE_PATH=${XCODE_PATH} VERSION=${VERSION}
+          nix develop -c make \
+            XCODE_PATH=${XCODE_PATH} \
+            VERSION=${VERSION} \
+            TARGET=mk-out-archive-libs-macos-universal-video-default
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7

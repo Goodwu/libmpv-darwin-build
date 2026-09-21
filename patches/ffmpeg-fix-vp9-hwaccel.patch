@@ -34,7 +34,7 @@ index 7c0a246..2abd3d3 100644
 +    .p.capabilities        = AV_CODEC_CAP_DR1 | AV_CODEC_CAP_FRAME_THREADS | AV_CODEC_CAP_SLICE_THREADS,
 +    .caps_internal         = FF_CODEC_CAP_INIT_CLEANUP |
 +                                FF_CODEC_CAP_SLICE_THREAD_HAS_MF |
-+                                FF_CODEC_CAP_ALLOCATE_PROGRESS,
++                                0,
 +    .flush                 = vp9_decode_flush,
 +    UPDATE_THREAD_CONTEXT(vp9_decode_update_thread_context),
 +    .p.profiles            = NULL_IF_CONFIG_SMALL(ff_vp9_profiles),

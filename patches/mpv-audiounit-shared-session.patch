@@ -23,12 +23,12 @@
  static OSStatus au_get_ary(AudioUnit unit, AudioUnitPropertyID inID, AudioUnitScope inScope, AudioUnitElement inElement, void **data, UInt32 *outDataSize)
  {
      OSStatus err;
-@@ -81,8 +88,60 @@
-     talloc_free(layout);
+@@ -82,6 +89,60 @@
      return new_layout;
  }
-+
-+static void acquire_audio_session(struct ao *ao, NSInteger pref_channels)
+ 
++static void acquire_audio_session(struct ao *ao, NSInteger pref_channels,
++                                  AVAudioSessionCategoryOptions options)
 +{
 +    struct priv *p = ao->priv;
 +    AVAudioSession *instance = AVAudioSession.sharedInstance;
@@ -37,7 +37,7 @@
 +
 +    if (audiounit_session_use_count == 0) {
 +        [instance setCategory:AVAudioSessionCategoryPlayback
-+                  withOptions:AVAudioSessionCategoryOptionMixWithOthers
++                  withOptions:options
 +                        error:nil];
 +        [instance setMode:AVAudioSessionModeMoviePlayback error:nil];
 +        [instance setActive:YES error:nil];
@@ -60,12 +60,12 @@
 +        return;
 +
 +    pthread_mutex_lock(&audiounit_session_lock);
- 
++
 +    if (audiounit_session_use_count > 0)
 +        audiounit_session_use_count--;
 +    else
 +        MP_WARN(ao, "audio session reference count underflow\n");
- 
++
 +    p->session_acquired = false;
 +
 +    if (audiounit_session_use_count == 0) {
@@ -81,23 +81,23 @@
 +    pthread_mutex_unlock(&audiounit_session_lock);
 +}
 +
+ 
  static OSStatus render_cb_lpcm(void *ctx, AudioUnitRenderActionFlags *aflags,
                                const AudioTimeStamp *ts, UInt32 bus,
-                               UInt32 frames, AudioBufferList *buffer_list)
-@@ -115,10 +174,8 @@
+@@ -120,10 +181,8 @@
+         options |= AVAudioSessionCategoryOptionMixWithOthers;
+     }
  
-     MP_VERBOSE(ao, "max channels: %ld, requested: %d\n", maxChannels, (int)ao->channels.num);
- 
--    [instance setCategory:AVAudioSessionCategoryPlayback error:nil];
+-    [instance setCategory:AVAudioSessionCategoryPlayback withOptions:options error:nil];
 -    [instance setMode:AVAudioSessionModeMoviePlayback error:nil];
 -    [instance setActive:YES error:nil];
 -    [instance setPreferredOutputNumberOfChannels:prefChannels error:nil];
 +    if (!p->skip_session_management)
-+        acquire_audio_session(ao, prefChannels);
++        acquire_audio_session(ao, prefChannels, options);
  
      AudioComponentDescription desc = (AudioComponentDescription) {
          .componentType         = kAudioUnitType_Output,
-@@ -201,6 +258,8 @@
+@@ -206,6 +265,8 @@
  coreaudio_error_component:
      AudioComponentInstanceDispose(p->audio_unit);
  coreaudio_error:
@@ -106,7 +106,7 @@
      talloc_free(layout);
      return false;
  }
-@@ -230,10 +289,8 @@
+@@ -235,10 +296,8 @@
      AudioUnitUninitialize(p->audio_unit);
      AudioComponentInstanceDispose(p->audio_unit);
  
@@ -119,7 +119,7 @@
  }
  
  static int init(struct ao *ao)
-@@ -257,4 +314,9 @@
+@@ -262,4 +321,9 @@
      .reset          = stop,
      .start          = start,
      .priv_size      = sizeof(struct priv),
