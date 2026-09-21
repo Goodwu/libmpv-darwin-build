@@ -74,15 +74,15 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           if-no-files-found: error
-          path: |
-            result/*.tar.gz
-            result/*.zip
+          # PiliPlusX consumes this single universal macOS runtime archive.
+          # Keep CI artifacts and tagged Releases aligned with that contract;
+          # component XCFramework archives are build intermediates, not a
+          # public release surface.
+          path: result/libmpv-libs_develop_macos-universal-video-default.tar.gz
 
       - name: Release
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
-          files: |
-            result/*.tar.gz
-            result/*.zip
+          files: result/libmpv-libs_develop_macos-universal-video-default.tar.gz
