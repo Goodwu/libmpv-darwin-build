@@ -1,0 +1,160 @@
+name: Reusable Apple native SDK
+
+on:
+  workflow_call:
+    inputs:
+      producer_repository:
+        type: string
+        default: Goodwu/libmpv-darwin-build
+      producer_ref:
+        description: Full producer commit containing packages.lock.nix and flake.lock.
+        type: string
+        required: true
+      media_kit_ref:
+        description: Full media-kit commit providing the common package verifier.
+        type: string
+        required: true
+      platform:
+        description: ios or macos; default renderer only.
+        type: string
+        required: true
+      artifact_name:
+        type: string
+        required: true
+      xcode_path:
+        type: string
+        default: /Applications/Xcode_16.1.0.app
+    outputs:
+      manifest_sha256:
+        value: ${{ jobs.build.outputs.manifest_sha256 }}
+      identity_sha256:
+        value: ${{ jobs.build.outputs.identity_sha256 }}
+      archive_sha256:
+        value: ${{ jobs.build.outputs.archive_sha256 }}
+  workflow_dispatch:
+    inputs:
+      producer_repository:
+        default: Goodwu/libmpv-darwin-build
+        type: string
+        required: true
+      producer_ref:
+        description: Full producer commit
+        type: string
+        required: true
+      media_kit_ref:
+        description: Full media-kit commit with tool/native_package/package.py
+        type: string
+        required: true
+      platform:
+        type: choice
+        options: [ios, macos]
+        required: true
+      artifact_name:
+        type: string
+        default: native-apple
+        required: true
+      xcode_path:
+        type: string
+        default: /Applications/Xcode_16.1.0.app
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 180
+    outputs:
+      manifest_sha256: ${{ steps.package.outputs.manifest_sha256 }}
+      identity_sha256: ${{ steps.package.outputs.identity_sha256 }}
+      archive_sha256: ${{ steps.package.outputs.archive_sha256 }}
+    env:
+      PRODUCER_REF: ${{ inputs.producer_ref }}
+      MEDIA_KIT_REF: ${{ inputs.media_kit_ref }}
+      NATIVE_PLATFORM: ${{ inputs.platform }}
+      XCODE_PATH: ${{ inputs.xcode_path }}
+    steps:
+      - name: Require immutable source selections and a supported target
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PRODUCER_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$MEDIA_KIT_REF" =~ ^[0-9a-f]{40}$ ]]
+          [[ "$NATIVE_PLATFORM" = ios || "$NATIVE_PLATFORM" = macos ]]
+          [[ "$XCODE_PATH" =~ ^/Applications/Xcode_[0-9.]+\.app$ ]]
+          test -x "$XCODE_PATH/Contents/Developer/usr/bin/xcodebuild"
+          echo "DEVELOPER_DIR=$XCODE_PATH/Contents/Developer" >> "$GITHUB_ENV"
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: ${{ inputs.producer_repository }}
+          ref: ${{ inputs.producer_ref }}
+          path: producer
+          persist-credentials: false
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          repository: Goodwu/media-kit
+          ref: ${{ inputs.media_kit_ref }}
+          path: package-tools
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+        with:
+          extra-conf: |
+            sandbox = true
+            sandbox-fallback = false
+      - uses: DeterminateSystems/magic-nix-cache-action@565684385bcd71bad329742eefe8d12f2e765b39 # v13
+        with:
+          use-flakehub: false
+      - name: Validate producer gates
+        working-directory: producer
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$PRODUCER_REF"
+          python3 -m unittest discover -s scripts -p 'test_*.py'
+      - name: Build the selected default XCFramework target
+        working-directory: producer
+        shell: bash
+        run: |
+          set -euo pipefail
+          nix develop --no-update-lock-file -c make \
+            XCODE_PATH="$XCODE_PATH" \
+            TARGET="mk-out-xcframeworks-$NATIVE_PLATFORM-universal-video-default"
+      - name: Export and verify headers and framework slices
+        id: package
+        working-directory: producer
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/package_native.py \
+            --platform "$NATIVE_PLATFORM" --frameworks result \
+            --output "$RUNNER_TEMP/native-package" \
+            --spec "$RUNNER_TEMP/native-package-spec.json"
+          python3 ../package-tools/tool/native_package/package.py create \
+            --root "$RUNNER_TEMP/native-package" \
+            --spec "$RUNNER_TEMP/native-package-spec.json" \
+            > "$RUNNER_TEMP/native-package-receipt.json"
+          manifest_sha=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["manifest_sha256"])' "$RUNNER_TEMP/native-package-receipt.json")
+          python3 ../package-tools/tool/native_package/package.py verify \
+            --root "$RUNNER_TEMP/native-package" --manifest-sha256 "$manifest_sha" --platform "$NATIVE_PLATFORM"
+          tar -C "$RUNNER_TEMP/native-package" -czf "$RUNNER_TEMP/native-package.tar.gz" .
+          python3 - <<'PY' >> "$GITHUB_OUTPUT"
+          import hashlib, json, os
+          from pathlib import Path
+          root = Path(os.environ["RUNNER_TEMP"])
+          receipt = json.loads((root / "native-package-receipt.json").read_text())
+          with (root / "native-package.tar.gz").open("rb") as source:
+              receipt["archive_sha256"] = hashlib.file_digest(source, "sha256").hexdigest()
+          (root / "native-package-receipt.json").write_text(json.dumps(receipt, indent=2) + "\n")
+          for name in ("manifest_sha256", "identity_sha256", "archive_sha256"):
+              print(f"{name}={receipt[name]}")
+          PY
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ inputs.artifact_name }}
+          if-no-files-found: error
+          compression-level: 0
+          path: |
+            ${{ runner.temp }}/native-package.tar.gz
+            ${{ runner.temp }}/native-package-receipt.json
+            ${{ runner.temp }}/native-package-spec.json
