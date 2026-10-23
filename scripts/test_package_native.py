@@ -127,6 +127,15 @@ class NativeInspectionTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "architectures disagree"):
                 package_native.inspect_binary(Path("Mpv"), {"arm64", "x86_64"}, {"Mpv.framework"})
 
+    def test_build_rpath_is_rejected_even_when_dylib_dependencies_are_bundled(self):
+        with patch.object(package_native, "command", side_effect=[
+            "arm64 x86_64",
+            "Mpv:\n\t@rpath/Mpv.framework/Mpv (compatibility version 1.0.0, current version 1.0.0)",
+            "Load command 20\n          cmd LC_RPATH\n         path /nix/store/build-input/lib (offset 12)\n",
+        ]):
+            with self.assertRaisesRegex(ValueError, "build-machine runtime path"):
+                package_native.inspect_binary(Path("Mpv"), {"arm64", "x86_64"}, {"Mpv.framework"})
+
     def test_nix_base64_archive_hash_is_normalized(self):
         value = bytes(range(32))
         self.assertEqual(package_native.archive_hash(base64.b64encode(value).decode()), value.hex())

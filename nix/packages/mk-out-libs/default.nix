@@ -131,6 +131,24 @@ if arch != archs.universal then
           install_name_tool -change $dep @rpath/$name $file
         done
       done
+
+      # Meson can leave build-machine LC_RPATH commands after installation.
+      # All shipped dependencies above use @rpath names; the app
+      # supplies the framework search path. Remove only host build paths while
+      # these binaries still contain one architecture, before the universal
+      # lipo merge (each architecture may have different Nix store paths).
+      for file in ./build/lib*.dylib; do
+        while IFS= read -r build_rpath; do
+          case "$build_rpath" in
+            /nix/store/*|/opt/homebrew/*|/usr/local/Cellar/*)
+              install_name_tool -delete_rpath "$build_rpath" "$file"
+              ;;
+          esac
+        done < <(otool -l "$file" | awk '
+          $1 == "cmd" && $2 == "LC_RPATH" { read_path = 1; next }
+          read_path && $1 == "path" { print $2; read_path = 0 }
+        ')
+      done
     '';
     installPhase = ''
       cp -r build $out

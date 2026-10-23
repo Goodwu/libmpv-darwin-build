@@ -42,6 +42,11 @@ copies those same headers into `include/mpv`; the application must use them
 instead of a separate source download. `provenance` contains the source/flake
 locks and the compiled input inspection report.
 
+Before combining architectures, the native recipe removes Nix/Homebrew build
+paths from each dylib's `LC_RPATH` commands. The application provides the
+runtime framework search path; the package must not depend on the producer's
+machine. This cleanup is part of the source recipe and changes package identity.
+
 The common media-kit packer writes a manifest containing actual file hashes,
 internal symbolic links, source/toolchain identity and explicit validation
 levels. Keep the spec outside the package directory. Transport the package in
